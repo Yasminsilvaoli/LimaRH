@@ -1,22 +1,49 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DisciplinaryRecordWithEmployee } from '@/lib/ocorrencias-mock'
 import { NewDisciplinaryDialog } from '@/components/modules/ocorrencias/new-disciplinary-dialog'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ShieldAlert, AlertTriangle, Calendar, FileText, Download, CheckCircle2 } from 'lucide-react'
+import { fetchDisciplinaryRecords, deleteDisciplinaryRecord } from '@/lib/services/ocorrencias'
+import { ShieldAlert, Calendar, FileText, CheckCircle2, Trash2, Loader2 } from 'lucide-react'
 
 interface DisciplinaryTabProps {
-  initialData: DisciplinaryRecordWithEmployee[]
+  initialData?: DisciplinaryRecordWithEmployee[]
 }
 
-export function DisciplinaryTab({ initialData }: DisciplinaryTabProps) {
+export function DisciplinaryTab({ initialData = [] }: DisciplinaryTabProps) {
   const [records, setRecords] = useState<DisciplinaryRecordWithEmployee[]>(initialData)
+  const [isLoading, setIsLoading] = useState(initialData.length === 0)
+
+  useEffect(() => {
+    let isMounted = true
+    async function load() {
+      try {
+        const data = await fetchDisciplinaryRecords()
+        if (isMounted) setRecords(data)
+      } finally {
+        if (isMounted) setIsLoading(false)
+      }
+    }
+    load()
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const handleAddRecord = (newRec: DisciplinaryRecordWithEmployee) => {
     setRecords((prev) => [newRec, ...prev])
+  }
+
+  const handleDeleteRecord = async (id: string, empName: string) => {
+    if (!confirm(`Deseja excluir a medida disciplinar referente a ${empName}?`)) return
+    const success = await deleteDisciplinaryRecord(id)
+    if (success) {
+      setRecords((prev) => prev.filter((r) => r.id !== id))
+    }
   }
 
   const getTypeBadge = (type: string) => {
@@ -43,79 +70,112 @@ export function DisciplinaryTab({ initialData }: DisciplinaryTabProps) {
         <NewDisciplinaryDialog onAddRecord={handleAddRecord} />
       </div>
 
-      <div className="space-y-3 sm:space-y-4">
-        {records.map((rec) => {
-          const incidentDate = new Date(rec.incident_date).toLocaleDateString('pt-BR')
+      {isLoading ? (
+        <div className="led-card p-12 text-center rounded-2xl flex flex-col items-center justify-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-rose-500" />
+          <p className="text-xs text-[var(--muted-foreground)] font-medium">Carregando histórico disciplinar...</p>
+        </div>
+      ) : records.length === 0 ? (
+        <EmptyState
+          icon={ShieldAlert}
+          title="Nenhuma ocorrência disciplinar registrada"
+          description="O quadro de colaboradores está 100% regular sem medidas disciplinares ativas."
+          actionNode={
+            <NewDisciplinaryDialog
+              onAddRecord={handleAddRecord}
+              trigger={
+                <Button className="h-10 px-5 rounded-xl font-bold text-xs gap-2 bg-rose-600 hover:bg-rose-700 text-white">
+                  <ShieldAlert className="h-4 w-4" />
+                  <span>Registrar Medida Disciplinar</span>
+                </Button>
+              }
+            />
+          }
+        />
+      ) : (
+        <div className="space-y-3 sm:space-y-4">
+          {records.map((rec) => {
+            const incidentDate = new Date(rec.incident_date).toLocaleDateString('pt-BR')
 
-          return (
-            <Card key={rec.id} className="border border-slate-200/90 dark:border-zinc-800 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 transition-all">
-              <CardHeader className="pb-2.5 sm:pb-3 border-b border-slate-100 dark:border-zinc-800">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    {getTypeBadge(rec.type)}
-                    <span className="text-xs text-slate-300 dark:text-zinc-600">•</span>
-                    <span className="text-xs font-bold text-slate-800 dark:text-zinc-100">
-                      {rec.employee_name} ({rec.employee_role})
-                    </span>
-                    <Badge variant={rec.contract_type === 'CLT' ? 'clt' : 'pj'}>
-                      {rec.contract_type}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-zinc-400 font-medium">
-                    <Calendar className="h-3.5 w-3.5 text-slate-400 dark:text-zinc-500" />
-                    <span>Incidente em: {incidentDate}</span>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="pt-3 sm:pt-4 space-y-2.5 sm:space-y-3 text-xs">
-                <div>
-                  <p className="text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
-                    Motivo Formal / Fatos
-                  </p>
-                  <p className="text-slate-700 dark:text-zinc-300 leading-relaxed mt-0.5">{rec.reason}</p>
-                </div>
-
-                {rec.days_suspended && (
-                  <div className="p-2.5 sm:p-3 bg-rose-50 dark:bg-rose-950/40 rounded-lg border border-rose-100 dark:border-rose-900/50 flex items-center justify-between">
-                    <span className="font-bold text-rose-900 dark:text-rose-200">
-                      Tempo de Afastamento Disciplinar:
-                    </span>
-                    <span className="font-extrabold text-rose-700 dark:text-rose-300 text-sm">
-                      {rec.days_suspended} {rec.days_suspended === 1 ? 'dia' : 'dias'} de suspensão
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 gap-2">
-                  <span className="text-[11px]">
-                    Registrado por: <strong className="text-slate-700 dark:text-zinc-200">{rec.registered_by}</strong>
-                  </span>
-
-                  {rec.document_url && (
+            return (
+              <Card key={rec.id} className="border border-slate-200/90 dark:border-zinc-800 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 transition-all">
+                <CardHeader className="pb-2.5 sm:pb-3 border-b border-slate-100 dark:border-zinc-800">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        Assinado digitalmente
+                      {getTypeBadge(rec.type)}
+                      <span className="text-xs text-slate-300 dark:text-zinc-600">•</span>
+                      <span className="text-xs font-bold text-slate-800 dark:text-zinc-100">
+                        {rec.employee_name} ({rec.employee_role})
                       </span>
-                      <a
-                        href={rec.document_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                      <Badge variant={rec.contract_type === 'CLT' ? 'clt' : 'pj'}>
+                        {rec.contract_type}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-zinc-400 font-medium">
+                        <Calendar className="h-3.5 w-3.5 text-slate-400 dark:text-zinc-500" />
+                        <span>Incidente em: {incidentDate}</span>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteRecord(rec.id, rec.employee_name)}
+                        className="text-slate-400 hover:text-rose-500 transition-colors p-1 rounded"
+                        title="Excluir ocorrência"
                       >
-                        <FileText className="h-3.5 w-3.5" />
-                        Ver Documento Anexo
-                      </a>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="pt-3 sm:pt-4 space-y-2.5 sm:space-y-3 text-xs">
+                  <div>
+                    <p className="text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                      Motivo Formal / Fatos
+                    </p>
+                    <p className="text-slate-700 dark:text-zinc-300 leading-relaxed mt-0.5">{rec.reason}</p>
+                  </div>
+
+                  {rec.days_suspended && (
+                    <div className="p-2.5 sm:p-3 bg-rose-50 dark:bg-rose-950/40 rounded-lg border border-rose-100 dark:border-rose-900/50 flex items-center justify-between">
+                      <span className="font-bold text-rose-900 dark:text-rose-200">
+                        Tempo de Afastamento Disciplinar:
+                      </span>
+                      <span className="font-extrabold text-rose-700 dark:text-rose-300 text-sm">
+                        {rec.days_suspended} {rec.days_suspended === 1 ? 'dia' : 'dias'} de suspensão
+                      </span>
                     </div>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+
+                  <div className="flex flex-wrap items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 gap-2">
+                    <span className="text-[11px]">
+                      Registrado por: <strong className="text-slate-700 dark:text-zinc-200">{rec.registered_by}</strong>
+                    </span>
+
+                    {rec.document_url && (
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Assinado digitalmente
+                        </span>
+                        <a
+                          href={rec.document_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          Ver Documento Anexo
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

@@ -4,11 +4,6 @@ import { useState } from 'react'
 import { OneOnOnesTab } from '@/components/modules/performance/one-on-ones-tab'
 import { FeedbacksTab } from '@/components/modules/performance/feedbacks-tab'
 import { PDITab } from '@/components/modules/performance/pdi-tab'
-import {
-  INITIAL_MOCK_1ON1S,
-  INITIAL_MOCK_FEEDBACKS,
-  INITIAL_MOCK_PDIS,
-} from '@/lib/performance-mock'
 import { MessageSquare, Sparkles, Target } from 'lucide-react'
 
 type TabType = '1on1' | 'feedback' | 'pdi'
@@ -72,9 +67,9 @@ export function PerformanceDashboard() {
 
       {/* Tab Panels */}
       <div>
-        {activeTab === '1on1' && <OneOnOnesTab initialData={INITIAL_MOCK_1ON1S} />}
-        {activeTab === 'feedback' && <FeedbacksTab initialData={INITIAL_MOCK_FEEDBACKS} />}
-        {activeTab === 'pdi' && <PDITab initialData={INITIAL_MOCK_PDIS} />}
+        {activeTab === '1on1' && <OneOnOnesTab initialData={[]} />}
+        {activeTab === 'feedback' && <FeedbacksTab initialData={[]} />}
+        {activeTab === 'pdi' && <PDITab initialData={[]} />}
       </div>
     </div>
   )

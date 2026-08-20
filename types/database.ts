@@ -14,6 +14,8 @@ export type DisciplinaryType = 'advertencia_verbal' | 'advertencia_escrita' | 's
 export type DocumentCategory = 'contrato' | 'atestado' | 'holerite' | 'nota_fiscal' | 'termo_aditivo' | 'outro'
 export type FeedbackType = 'elogio' | 'alinhamento' | 'orientacao'
 export type PdiGoalStatus = 'nao_iniciado' | 'em_andamento' | 'concluido' | 'cancelado'
+export type PDIGoalStatus = PdiGoalStatus
+export type CertificateStatus = 'pendente' | 'aprovado' | 'rejeitado'
 
 export interface Database {
   public: {

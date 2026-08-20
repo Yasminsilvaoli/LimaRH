@@ -1,16 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { JobWithMetrics } from '@/lib/mock-data'
 import { JobCard } from '@/components/modules/ats/job-card'
 import { JobFormDialog } from '@/components/modules/ats/job-form-dialog'
 import { ImportJobsDialog } from '@/components/modules/ats/import-jobs-dialog'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { fetchJobs } from '@/lib/services/jobs'
 import {
   Briefcase,
   Users,
@@ -18,24 +18,23 @@ import {
   Search,
   X,
   RotateCcw,
-  ArrowRight,
   Filter,
-  Layers,
+  Loader2,
 } from 'lucide-react'
 
 interface ATSDashboardProps {
-  initialJobs: JobWithMetrics[]
+  initialJobs?: JobWithMetrics[]
 }
 
 type MetricFilterType = 'todos' | 'abertas' | 'candidatos' | 'aprovados'
 
-export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
-  const router = useRouter()
+export function ATSDashboard({ initialJobs = [] }: ATSDashboardProps) {
   const searchParams = useSearchParams()
   const urlSearch = searchParams.get('search') || searchParams.get('q') || ''
 
   const [hasMounted, setHasMounted] = useState(false)
   const [jobs, setJobs] = useState<JobWithMetrics[]>(initialJobs)
+  const [isLoading, setIsLoading] = useState(initialJobs.length === 0)
   const [searchTerm, setSearchTerm] = useState(urlSearch)
   const [metricFilter, setMetricFilter] = useState<MetricFilterType>('todos')
   const [contractFilter, setContractFilter] = useState('todos')
@@ -43,9 +42,21 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
 
   useEffect(() => {
     setHasMounted(true)
+    let isMounted = true
+    async function load() {
+      try {
+        const data = await fetchJobs()
+        if (isMounted) setJobs(data)
+      } finally {
+        if (isMounted) setIsLoading(false)
+      }
+    }
+    load()
+    return () => {
+      isMounted = false
+    }
   }, [])
 
-  // Atualizar termo de busca se o parâmetro na URL mudar (ex: vindo do Header)
   useEffect(() => {
     if (urlSearch !== searchTerm) {
       setSearchTerm(urlSearch)
@@ -64,9 +75,8 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
     setJobs((prev) => [...importedJobs, ...prev])
   }
 
-  // Alternar filtro métrico clicável
-  const handleToggleMetricFilter = (filterType: MetricFilterType) => {
-    setMetricFilter((current) => (current === filterType ? 'todos' : filterType))
+  const handleToggleMetricFilter = (type: MetricFilterType) => {
+    setMetricFilter((prev) => (prev === type ? 'todos' : type))
   }
 
   const handleResetFilters = () => {
@@ -74,25 +84,19 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
     setMetricFilter('todos')
     setContractFilter('todos')
     setDeptFilter('todos')
-    router.replace('/ats')
   }
 
-  // Filtragem combinada
   const filteredJobs = jobs.filter((job) => {
-    const term = searchTerm.toLowerCase().trim()
     const matchesSearch =
-      !term ||
-      job.title.toLowerCase().includes(term) ||
-      job.department.toLowerCase().includes(term) ||
-      job.location?.toLowerCase().includes(term) ||
-      job.requirements?.toLowerCase().includes(term) ||
-      job.contract_type.toLowerCase().includes(term) ||
-      job.workplace_model.toLowerCase().includes(term)
+      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.location?.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesContract =
       contractFilter === 'todos' || job.contract_type === contractFilter
 
-    const matchesDept = deptFilter === 'todos' || job.department === deptFilter
+    const matchesDept =
+      deptFilter === 'todos' || job.department === deptFilter
 
     let matchesMetric = true
     if (metricFilter === 'abertas') {
@@ -110,7 +114,6 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
   const totalCandidates = jobs.reduce((acc, curr) => acc + curr.total_candidates, 0)
   const totalHired = jobs.reduce((acc, curr) => acc + curr.hired, 0)
 
-  // Extrair departamentos únicos para o dropdown
   const uniqueDepartments = Array.from(new Set(jobs.map((j) => j.department)))
 
   const isFiltering =
@@ -138,7 +141,7 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
         </div>
       </div>
 
-      {/* Metrics Banner — Cards Interativos e Clicáveis com Efeito Hover e Filtro Rápido */}
+      {/* Metrics Banner */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {/* Card 1: Vagas Abertas */}
         <button
@@ -156,7 +159,7 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
               className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                 metricFilter === 'abertas'
                   ? 'bg-[var(--primary)] text-white'
-                  : 'bg-[var(--accent)] text-[var(--primary)] group-hover:bg-[var(--primary)] group-hover:text-white'
+                  : 'bg-[var(--accent)] text-[var(--primary)] dark:text-[#00FF7F] group-hover:bg-[var(--primary)] group-hover:text-white'
               }`}
             >
               <Briefcase className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -198,14 +201,14 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
               className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                 metricFilter === 'candidatos'
                   ? 'bg-[var(--primary)] text-white'
-                  : 'bg-[var(--accent)] text-[var(--primary)] group-hover:bg-[var(--primary)] group-hover:text-white'
+                  : 'bg-[var(--accent)] text-[var(--primary)] dark:text-[#00FF7F] group-hover:bg-[var(--primary)] group-hover:text-white'
               }`}
             >
               <Users className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div>
               <p className="text-[11px] sm:text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
-                Candidatos no Funil
+                Total Candidatos
               </p>
               <p className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">{totalCandidates}</p>
             </div>
@@ -224,7 +227,7 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
           </div>
         </button>
 
-        {/* Card 3: Aprovados / Admitidos */}
+        {/* Card 3: Contratações / Aprovados */}
         <button
           type="button"
           onClick={() => handleToggleMetricFilter('aprovados')}
@@ -233,23 +236,23 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
               ? 'ring-2 ring-[var(--primary)] bg-[var(--accent)] border-[var(--primary)]'
               : 'hover:border-[var(--primary)]'
           }`}
-          title="Clique para filtrar vagas com contratações realizadas"
+          title="Clique para filtrar vagas com candidatos aprovados/contratados"
         >
           <div className="flex items-center gap-3 sm:gap-4">
             <div
               className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                 metricFilter === 'aprovados'
-                  ? 'bg-[var(--primary)] text-white'
-                  : 'bg-[var(--accent)] text-[var(--primary)] group-hover:bg-[var(--primary)] group-hover:text-white'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-emerald-500/10 text-emerald-600 dark:text-[#00FF7F] group-hover:bg-emerald-600 group-hover:text-white'
               }`}
             >
               <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div>
               <p className="text-[11px] sm:text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
-                Aprovados / Admitidos
+                Contratações (Mês)
               </p>
-              <p className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">{totalHired}</p>
+              <p className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-[#00FF7F]">{totalHired}</p>
             </div>
           </div>
 
@@ -257,8 +260,8 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
             <span
               className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
                 metricFilter === 'aprovados'
-                  ? 'bg-[var(--primary)] text-white'
-                  : 'bg-[var(--secondary)] text-[var(--muted-foreground)] group-hover:text-[var(--primary)]'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-[var(--secondary)] text-[var(--muted-foreground)] group-hover:text-emerald-600'
               }`}
             >
               {metricFilter === 'aprovados' ? 'Filtrando' : 'Filtrar'}
@@ -267,154 +270,86 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
         </button>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="led-card flex flex-col gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-          {/* Input de Busca em tempo real com botão de limpeza */}
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
-            <Input
-              placeholder="Buscar vagas por título, área, localização ou requisitos..."
-              className="pl-9 pr-8 text-xs h-9"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+      {/* Filter Bar (Only show if jobs exist) */}
+      {jobs.length > 0 && (
+        <div className="led-card p-4 rounded-xl space-y-3">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="relative w-full md:flex-1">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--muted-foreground)]" />
+              <Input
+                placeholder="Buscar por título, área ou localização..."
+                className="pl-9 text-xs"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="w-full md:w-48">
+                <Select
+                  value={contractFilter}
+                  onChange={(e) => setContractFilter(e.target.value)}
+                  options={[
+                    { label: 'Todos os Regimes', value: 'todos' },
+                    { label: 'Apenas CLT', value: 'CLT' },
+                    { label: 'Apenas PJ', value: 'PJ' },
+                  ]}
+                />
+              </div>
+
+              <div className="w-full md:w-48">
+                <Select
+                  value={deptFilter}
+                  onChange={(e) => setDeptFilter(e.target.value)}
+                  options={[
+                    { label: 'Todos os Departamentos', value: 'todos' },
+                    ...uniqueDepartments.map((d) => ({ label: d, value: d })),
+                  ]}
+                />
+              </div>
+
+              {isFiltering && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetFilters}
+                  className="h-9 px-3 text-xs gap-1.5 font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                  title="Limpar todos os filtros aplicados"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Limpar</span>
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content Rendering */}
+      {isLoading ? (
+        <div className="led-card p-12 text-center rounded-2xl flex flex-col items-center justify-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--primary)] dark:text-[#00FF7F]" />
+          <p className="text-xs text-[var(--muted-foreground)] font-medium">Carregando painel de vagas...</p>
+        </div>
+      ) : jobs.length === 0 ? (
+        <EmptyState
+          icon={Briefcase}
+          title="Nenhuma vaga aberta no momento"
+          description="Publique sua primeira oportunidade de contratação para começar a receber e gerenciar candidaturas no funil."
+          actionNode={
+            <JobFormDialog
+              onAddJob={handleAddJob}
+              trigger={
+                <Button className="h-10 px-5 rounded-xl font-bold text-xs gap-2 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-sm dark:bg-[#00FF7F] dark:hover:bg-[#00FA9A] dark:text-black dark:shadow-[0_0_15px_rgba(0,255,127,0.3)]">
+                  <Briefcase className="h-4 w-4" />
+                  <span>Criar Primeira Vaga</span>
+                </Button>
+              }
             />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] p-0.5 rounded"
-                title="Limpar busca"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Filtros Dropdown */}
-          <div className="flex items-center gap-2.5 w-full md:w-auto">
-            <div className="w-full md:w-44">
-              <Select
-                value={contractFilter}
-                onChange={(e) => setContractFilter(e.target.value)}
-                options={[
-                  { label: 'Todos os Regimes', value: 'todos' },
-                  { label: 'Apenas CLT', value: 'CLT' },
-                  { label: 'Apenas PJ', value: 'PJ' },
-                ]}
-              />
-            </div>
-
-            <div className="w-full md:w-48">
-              <Select
-                value={deptFilter}
-                onChange={(e) => setDeptFilter(e.target.value)}
-                options={[
-                  { label: 'Todos os Departamentos', value: 'todos' },
-                  ...uniqueDepartments.map((d) => ({ label: d, value: d })),
-                ]}
-              />
-            </div>
-
-            {isFiltering && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleResetFilters}
-                className="h-9 px-3 text-xs gap-1.5 font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                title="Limpar todos os filtros aplicados"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Limpar</span>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Resumo de Filtros Ativos e Contador */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border-subtle)] text-xs">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[var(--muted-foreground)] font-medium flex items-center gap-1">
-              <Filter className="h-3 w-3" />
-              <span>Filtros ativos:</span>
-            </span>
-
-            {metricFilter !== 'todos' && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent)] text-[var(--primary)] font-semibold text-[11px]">
-                <span>
-                  Métrica:{' '}
-                  {metricFilter === 'abertas'
-                    ? 'Vagas Abertas'
-                    : metricFilter === 'candidatos'
-                    ? 'Com Candidatos'
-                    : 'Com Aprovados'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setMetricFilter('todos')}
-                  className="hover:opacity-75"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-
-            {contractFilter !== 'todos' && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--secondary)] border border-[var(--border-subtle)] text-[var(--foreground)] font-medium text-[11px]">
-                <span>Regime: {contractFilter}</span>
-                <button
-                  type="button"
-                  onClick={() => setContractFilter('todos')}
-                  className="hover:opacity-75"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-
-            {deptFilter !== 'todos' && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--secondary)] border border-[var(--border-subtle)] text-[var(--foreground)] font-medium text-[11px]">
-                <span>Área: {deptFilter}</span>
-                <button
-                  type="button"
-                  onClick={() => setDeptFilter('todos')}
-                  className="hover:opacity-75"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-
-            {searchTerm && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--secondary)] border border-[var(--border-subtle)] text-[var(--foreground)] font-medium text-[11px]">
-                <span>Busca: &quot;{searchTerm}&quot;</span>
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm('')}
-                  className="hover:opacity-75"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-
-            {!isFiltering && (
-              <span className="text-[var(--muted-foreground)] text-[11px] italic">
-                Nenhum filtro aplicado (exibindo todas as vagas)
-              </span>
-            )}
-          </div>
-
-          <div className="text-[var(--muted-foreground)] text-[11px] font-semibold">
-            Exibindo <span className="text-[var(--foreground)] font-bold">{filteredJobs.length}</span> de{' '}
-            <span className="text-[var(--foreground)] font-bold">{jobs.length}</span> vagas
-          </div>
-        </div>
-      </div>
-
-      {/* Jobs Grid */}
-      {filteredJobs.length === 0 ? (
+          }
+        />
+      ) : filteredJobs.length === 0 ? (
         <div className="led-card text-center py-16 rounded-xl border-dashed">
           <Briefcase className="h-10 w-10 text-[var(--muted-foreground)] mx-auto mb-3 opacity-40" />
           <h3 className="text-base font-semibold text-[var(--foreground)]">Nenhuma vaga encontrada</h3>

@@ -1,11 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, MapPin, DollarSign, Briefcase } from 'lucide-react'
-import { INITIAL_MOCK_JOBS, INITIAL_MOCK_CANDIDATES } from '@/lib/mock-data'
+import { ArrowLeft, MapPin, DollarSign } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { KanbanBoard } from '@/components/modules/ats/kanban-board'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils'
+import { fetchCandidatesForJob } from '@/lib/services/jobs'
 
 interface JobDetailsPageProps {
   params: Promise<{
@@ -15,41 +15,48 @@ interface JobDetailsPageProps {
 
 export default async function JobDetailsPage({ params }: JobDetailsPageProps) {
   const { jobId } = await params
-  const job = INITIAL_MOCK_JOBS.find((j) => j.id === jobId)
+  const supabase = createClient()
 
-  if (!job) {
+  const { data: job, error } = await (supabase.from('jobs') as any)
+    .select('*')
+    .eq('id', jobId)
+    .maybeSingle()
+
+  if (error || !job) {
     notFound()
   }
 
-  const isCLT = job.contract_type === 'CLT'
+  const typedJob = job as any
+  const candidates = await fetchCandidatesForJob(typedJob.id)
+  const isCLT = typedJob.contract_type === 'CLT'
 
   return (
     <div className="space-y-6">
       {/* Top Breadcrumb & Job Summary */}
       <div className="flex flex-col gap-4">
-        <Link href="/ats" className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors">
+        <Link href="/ats" className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition-colors">
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Voltar para todas as vagas</span>
         </Link>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 bg-white rounded-xl border border-slate-200 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Badge variant={isCLT ? 'clt' : 'pj'}>{job.contract_type}</Badge>
-              <h1 className="text-xl font-bold text-slate-900">{job.title}</h1>
+              <Badge variant={isCLT ? 'clt' : 'pj'}>{typedJob.contract_type}</Badge>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">{typedJob.title}</h1>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 pt-1">
-              <span>{job.department}</span>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-zinc-400 pt-1">
+              <span>{typedJob.department}</span>
               <span>•</span>
               <span className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
-                {job.location}
+                {typedJob.location}
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+              <span className="flex items-center gap-1 text-emerald-600 dark:text-[#00FF7F] font-semibold">
                 <DollarSign className="h-3 w-3" />
-                {job.min_salary && job.max_salary
-                  ? `${formatCurrency(job.min_salary)} - ${formatCurrency(job.max_salary)}`
+                {typedJob.min_salary && typedJob.max_salary
+                  ? `${formatCurrency(typedJob.min_salary)} - ${formatCurrency(typedJob.max_salary)}`
                   : 'A combinar'}
               </span>
             </div>
@@ -60,15 +67,15 @@ export default async function JobDetailsPage({ params }: JobDetailsPageProps) {
       {/* Kanban Pipeline Section */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+          <h2 className="text-sm font-bold text-slate-800 dark:text-zinc-200 uppercase tracking-wider">
             Pipeline de Candidatos
           </h2>
-          <span className="text-xs text-slate-400">
-            Arraste ou use os controles de seta para avançar o candidato
+          <span className="text-xs text-slate-400 dark:text-zinc-500">
+            Acompanhe ou mova o candidato entre as etapas de contratação
           </span>
         </div>
 
-        <KanbanBoard initialCandidates={INITIAL_MOCK_CANDIDATES} jobId={job.id} />
+        <KanbanBoard initialCandidates={candidates} jobId={typedJob.id} />
       </div>
     </div>
   )

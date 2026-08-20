@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Sparkles, Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -11,63 +11,93 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { FeedbackWithUsers } from '@/lib/performance-mock'
-import { FeedbackType } from '@/types'
+import { FeedbackType, EmployeeWithDetails } from '@/types'
+import { createFeedback } from '@/lib/services/feedbacks'
+import { fetchEmployees } from '@/lib/services/employees'
 
 interface NewFeedbackSBIDialogProps {
   onAddFeedback: (feedback: FeedbackWithUsers) => void
+  trigger?: React.ReactNode
 }
 
-export function NewFeedbackSBIDialog({ onAddFeedback }: NewFeedbackSBIDialogProps) {
+export function NewFeedbackSBIDialog({ onAddFeedback, trigger }: NewFeedbackSBIDialogProps) {
   const [open, setOpen] = useState(false)
-  const [toName, setToName] = useState('Lucas Silveira Mendes')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [employees, setEmployees] = useState<EmployeeWithDetails[]>([])
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('')
+  const [customToName, setCustomToName] = useState('')
   const [feedbackType, setFeedbackType] = useState<FeedbackType>('elogio')
   const [situation, setSituation] = useState('')
   const [behavior, setBehavior] = useState('')
   const [impact, setImpact] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (open) {
+      fetchEmployees().then((data) => {
+        setEmployees(data)
+        if (data.length > 0) {
+          setSelectedEmployeeId(data[0].id)
+        }
+      })
+    }
+  }, [open])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!situation.trim() || !behavior.trim() || !impact.trim()) return
 
-    const newFeedback: FeedbackWithUsers = {
-      id: `fb-${Date.now()}`,
-      organization_id: 'org-1',
-      from_id: 'mgr-1',
-      to_id: 'emp-1',
-      from_name: 'Carlos Eduardo Ramos',
-      from_role: 'CTO',
-      to_name: toName,
-      to_role: 'Engenharia / Design',
-      feedback_type: feedbackType,
-      situation,
-      behavior,
-      impact,
-      is_anonymous: false,
-      created_at: new Date().toISOString(),
+    let toName = customToName.trim()
+    if (selectedEmployeeId && employees.length > 0) {
+      const found = employees.find((emp) => emp.id === selectedEmployeeId)
+      if (found) toName = found.full_name
     }
 
-    onAddFeedback(newFeedback)
-    setOpen(false)
-    setSituation('')
-    setBehavior('')
-    setImpact('')
+    if (!toName) return
+
+    setIsSubmitting(true)
+    try {
+      const fb = await createFeedback({
+        to_name: toName,
+        feedback_type: feedbackType,
+        situation,
+        behavior,
+        impact,
+      })
+
+      if (fb) {
+        onAddFeedback(fb)
+        setOpen(false)
+        setSituation('')
+        setBehavior('')
+        setImpact('')
+        setCustomToName('')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="h-9 px-4 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-sm dark:bg-[#00FF7F] dark:hover:bg-[#00FA9A] dark:text-black font-bold text-xs flex items-center gap-2 dark:shadow-[0_0_12px_rgba(0,255,127,0.3)] dark:hover:shadow-[0_0_16px_rgba(0,255,127,0.5)] transition-all cursor-pointer"
-      >
-        <Plus className="h-4 w-4 stroke-[2.5]" />
-        <span>Registrar Feedback SBI</span>
-      </button>
+      {trigger ? (
+        <div onClick={() => setOpen(true)} className="inline-block cursor-pointer">
+          {trigger}
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="h-9 px-4 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-sm dark:bg-[#00FF7F] dark:hover:bg-[#00FA9A] dark:text-black font-bold text-xs flex items-center gap-2 dark:shadow-[0_0_12px_rgba(0,255,127,0.3)] dark:hover:shadow-[0_0_16px_rgba(0,255,127,0.5)] transition-all cursor-pointer"
+        >
+          <Plus className="h-4 w-4 stroke-[2.5]" />
+          <span>Registrar Feedback SBI</span>
+        </button>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           onClose={() => setOpen(false)}
-          className="max-w-lg bg-white border border-slate-200 text-slate-900 shadow-2xl dark:bg-[#121212] dark:border-[#00FF7F]/40 dark:text-white"
+          className="max-w-lg bg-white border border-slate-200 text-slate-900 shadow-2xl dark:bg-[#121212] dark:border-[#00FF7F]/40 dark:text-white max-h-[90vh] overflow-y-auto"
         >
           <DialogHeader>
             <DialogTitle className="text-slate-900 dark:text-white text-base sm:text-lg font-bold">
@@ -82,23 +112,30 @@ export function NewFeedbackSBIDialog({ onAddFeedback }: NewFeedbackSBIDialogProp
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-slate-700 dark:text-white font-semibold mb-1">
-                  Destinatário *
+                  Colaborador Receptor *
                 </label>
-                <select
-                  value={toName}
-                  onChange={(e) => setToName(e.target.value)}
-                  className="w-full h-9 px-3 rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] dark:bg-[#000000] dark:border-white/20 dark:text-white dark:focus:border-[#00FF7F] dark:focus:ring-[#00FF7F] text-xs"
-                >
-                  <option value="Lucas Silveira Mendes" className="bg-white text-slate-900 dark:bg-[#121212] dark:text-white">
-                    Lucas Silveira Mendes
-                  </option>
-                  <option value="Mariana Duarte Costa" className="bg-white text-slate-900 dark:bg-[#121212] dark:text-white">
-                    Mariana Duarte Costa
-                  </option>
-                  <option value="Rodrigo Barbosa Alencar" className="bg-white text-slate-900 dark:bg-[#121212] dark:text-white">
-                    Rodrigo Barbosa Alencar
-                  </option>
-                </select>
+                {employees.length > 0 ? (
+                  <select
+                    value={selectedEmployeeId}
+                    onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                    className="w-full h-9 px-3 rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] dark:bg-[#000000] dark:border-white/20 dark:text-white dark:focus:border-[#00FF7F] dark:focus:ring-[#00FF7F] text-xs"
+                  >
+                    {employees.map((emp) => (
+                      <option key={emp.id} value={emp.id} className="bg-white text-slate-900 dark:bg-[#121212] dark:text-white">
+                        {emp.full_name} ({emp.job_title})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nome do colaborador receptor"
+                    value={customToName}
+                    onChange={(e) => setCustomToName(e.target.value)}
+                    className="w-full h-9 px-3 rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] dark:bg-[#000000] dark:border-white/20 dark:text-white dark:focus:border-[#00FF7F] dark:focus:ring-[#00FF7F] text-xs"
+                  />
+                )}
               </div>
 
               <div>
@@ -114,54 +151,57 @@ export function NewFeedbackSBIDialog({ onAddFeedback }: NewFeedbackSBIDialogProp
                     Elogio / Reconhecimento
                   </option>
                   <option value="orientacao" className="bg-white text-slate-900 dark:bg-[#121212] dark:text-white">
-                    Orientação de Ajuste
+                    Orientação / Ponto de Melhoria
                   </option>
                   <option value="alinhamento" className="bg-white text-slate-900 dark:bg-[#121212] dark:text-white">
-                    Alinhamento de Expectativas
+                    Alinhamento Geral
                   </option>
                 </select>
               </div>
             </div>
 
-            <div>
-              <label className="block text-slate-700 dark:text-white font-semibold mb-1">
-                S - Situação (Onde e quando aconteceu?) *
+            {/* S - Situation */}
+            <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl space-y-1">
+              <label className="block font-bold text-blue-900 dark:text-blue-300 text-xs">
+                S • Situação (Quando e onde aconteceu?) *
               </label>
               <textarea
                 required
-                placeholder="Ex: Durante a reunião de sprint review de quarta-feira passada..."
                 rows={2}
+                placeholder="Ex: Na reunião de release da última quinta-feira à tarde..."
                 value={situation}
                 onChange={(e) => setSituation(e.target.value)}
-                className="w-full p-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] dark:bg-[#000000] dark:border-white/20 dark:text-white dark:placeholder-[#A1A1AA] dark:focus:border-[#00FF7F] dark:focus:ring-[#00FF7F] text-xs resize-none"
+                className="w-full p-2.5 rounded-lg bg-white border border-blue-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:bg-[#000000] dark:border-white/20 dark:text-white dark:placeholder-[#A1A1AA] dark:focus:border-[#00FF7F] dark:focus:ring-[#00FF7F] text-xs resize-none"
               />
             </div>
 
-            <div>
-              <label className="block text-slate-700 dark:text-white font-semibold mb-1">
-                B - Comportamento (Qual foi a ação observável?) *
+            {/* B - Behavior */}
+            <div className="p-3 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-xl space-y-1">
+              <label className="block font-bold text-amber-900 dark:text-amber-300 text-xs">
+                B • Comportamento (Qual foi a ação observável?) *
               </label>
               <textarea
                 required
-                placeholder="Ex: Você apresentou a arquitetura da nova feature com clareza e antecipou riscos técnicos..."
                 rows={2}
+                placeholder="Ex: Você identificou um gargalo na query e apresentou uma alternativa estruturada..."
                 value={behavior}
                 onChange={(e) => setBehavior(e.target.value)}
-                className="w-full p-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] dark:bg-[#000000] dark:border-white/20 dark:text-white dark:placeholder-[#A1A1AA] dark:focus:border-[#00FF7F] dark:focus:ring-[#00FF7F] text-xs resize-none"
+                className="w-full p-2.5 rounded-lg bg-white border border-amber-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 dark:bg-[#000000] dark:border-white/20 dark:text-white dark:placeholder-[#A1A1AA] dark:focus:border-[#00FF7F] dark:focus:ring-[#00FF7F] text-xs resize-none"
               />
             </div>
 
-            <div>
-              <label className="block text-slate-700 dark:text-white font-semibold mb-1">
-                I - Impacto (Qual foi o resultado gerado para o time/negócio?) *
+            {/* I - Impact */}
+            <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl space-y-1">
+              <label className="block font-bold text-emerald-900 dark:text-emerald-300 text-xs">
+                I • Impacto (Qual foi o resultado gerado?) *
               </label>
               <textarea
                 required
-                placeholder="Ex: Isso aumentou a confiança do cliente e economizou 2 semanas de retrabalho do time..."
                 rows={2}
+                placeholder="Ex: Isso garantiu que o deploy ocorresse sem instabilidades para milhares de usuários..."
                 value={impact}
                 onChange={(e) => setImpact(e.target.value)}
-                className="w-full p-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] dark:bg-[#000000] dark:border-white/20 dark:text-white dark:placeholder-[#A1A1AA] dark:focus:border-[#00FF7F] dark:focus:ring-[#00FF7F] text-xs resize-none"
+                className="w-full p-2.5 rounded-lg bg-white border border-emerald-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:bg-[#000000] dark:border-white/20 dark:text-white dark:placeholder-[#A1A1AA] dark:focus:border-[#00FF7F] dark:focus:ring-[#00FF7F] text-xs resize-none"
               />
             </div>
 
@@ -169,15 +209,24 @@ export function NewFeedbackSBIDialog({ onAddFeedback }: NewFeedbackSBIDialogProp
               <button
                 type="button"
                 onClick={() => setOpen(false)}
+                disabled={isSubmitting}
                 className="h-9 px-4 rounded-lg bg-transparent border border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-white/20 dark:text-white dark:hover:bg-white/10 font-semibold text-xs transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="h-9 px-4 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-sm dark:bg-[#00FF7F] dark:hover:bg-[#00FA9A] dark:text-black font-bold text-xs transition-all dark:shadow-[0_0_10px_rgba(0,255,127,0.3)] cursor-pointer"
+                disabled={isSubmitting}
+                className="h-9 px-4 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-sm dark:bg-[#00FF7F] dark:hover:bg-[#00FA9A] dark:text-black font-bold text-xs transition-all dark:shadow-[0_0_10px_rgba(0,255,127,0.3)] cursor-pointer flex items-center gap-1.5"
               >
-                Salvar Feedback SBI
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Registrando...</span>
+                  </>
+                ) : (
+                  <span>Salvar Feedback</span>
+                )}
               </button>
             </DialogFooter>
           </form>

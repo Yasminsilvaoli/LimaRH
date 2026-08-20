@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -15,13 +15,16 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { JobWithMetrics } from '@/lib/mock-data'
+import { createJob } from '@/lib/services/jobs'
 
 interface JobFormDialogProps {
   onAddJob: (job: JobWithMetrics) => void
+  trigger?: React.ReactNode
 }
 
-export function JobFormDialog({ onAddJob }: JobFormDialogProps) {
+export function JobFormDialog({ onAddJob, trigger }: JobFormDialogProps) {
   const [open, setOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [title, setTitle] = useState('')
   const [department, setDepartment] = useState('Engenharia')
   const [contractType, setContractType] = useState<'CLT' | 'PJ'>('CLT')
@@ -30,59 +33,69 @@ export function JobFormDialog({ onAddJob }: JobFormDialogProps) {
   const [minSalary, setMinSalary] = useState('')
   const [maxSalary, setMaxSalary] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
 
-    const newJob: JobWithMetrics = {
-      id: `job-${Date.now()}`,
-      organization_id: 'org-1',
-      title,
-      department,
-      contract_type: contractType,
-      workplace_model: workplaceModel,
-      location: workplaceModel === 'remoto' ? 'Brasil (Remoto)' : 'São Paulo, SP',
-      description,
-      requirements: 'Não especificado',
-      benefits: contractType === 'CLT' ? 'VR, VT, Plano de Saúde' : 'Recesso remunerado, Bônus semestral',
-      min_salary: minSalary ? Number(minSalary) : null,
-      max_salary: maxSalary ? Number(maxSalary) : null,
-      status: 'aberta',
-      created_by: 'user-admin',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      total_candidates: 0,
-      in_progress: 0,
-      hired: 0,
-    }
+    setIsSubmitting(true)
+    try {
+      const created = await createJob({
+        organization_id: '00000000-0000-0000-0000-000000000001',
+        title,
+        department,
+        contract_type: contractType,
+        workplace_model: workplaceModel,
+        location: workplaceModel === 'remoto' ? 'Brasil (Remoto)' : 'São Paulo, SP',
+        description: description || 'Posição estratégica aberta no time.',
+        requirements: 'Experiência relevante na área e alinhamento cultural.',
+        benefits: contractType === 'CLT' ? 'VR, VT, Plano de Saúde' : 'Recesso remunerado e bônus',
+        min_salary: minSalary ? Number(minSalary) : null,
+        max_salary: maxSalary ? Number(maxSalary) : null,
+        status: 'aberta',
+        created_by: '00000000-0000-0000-0000-000000000001',
+      })
 
-    onAddJob(newJob)
-    setOpen(false)
-    setTitle('')
-    setDescription('')
-    setMinSalary('')
-    setMaxSalary('')
+      if (created) {
+        onAddJob(created)
+        setOpen(false)
+        setTitle('')
+        setDescription('')
+        setMinSalary('')
+        setMaxSalary('')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="gap-2 shadow-sm font-semibold">
-        <Plus className="h-4 w-4" />
-        <span>Criar Nova Vaga</span>
-      </Button>
+      {trigger ? (
+        <div onClick={() => setOpen(true)} className="inline-block cursor-pointer">
+          {trigger}
+        </div>
+      ) : (
+        <Button
+          onClick={() => setOpen(true)}
+          className="gap-2 shadow-sm font-semibold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white dark:bg-[#00FF7F] dark:hover:bg-[#00FA9A] dark:text-black dark:shadow-[0_0_12px_rgba(0,255,127,0.3)]"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Criar Nova Vaga</span>
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent onClose={() => setOpen(false)} className="max-w-xl">
+        <DialogContent onClose={() => setOpen(false)} className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Abertura de Nova Vaga</DialogTitle>
+            <DialogTitle>Abertura de Nova Vaga (ATS)</DialogTitle>
             <DialogDescription>
-              Preencha as informações para publicar uma nova posição no LimaRH.
+              Preencha as informações para cadastrar e publicar uma nova posição no sistema.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">
+              <label className="block text-slate-700 dark:text-zinc-200 font-semibold mb-1">
                 Título da Vaga *
               </label>
               <Input
@@ -93,9 +106,9 @@ export function JobFormDialog({ onAddJob }: JobFormDialogProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">
+                <label className="block text-slate-700 dark:text-zinc-200 font-semibold mb-1">
                   Departamento *
                 </label>
                 <Select
@@ -113,7 +126,7 @@ export function JobFormDialog({ onAddJob }: JobFormDialogProps) {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">
+                <label className="block text-slate-700 dark:text-zinc-200 font-semibold mb-1">
                   Regime de Contratação *
                 </label>
                 <Select
@@ -127,9 +140,9 @@ export function JobFormDialog({ onAddJob }: JobFormDialogProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">
+                <label className="block text-slate-700 dark:text-zinc-200 font-semibold mb-1">
                   Modelo de Trabalho
                 </label>
                 <Select
@@ -144,7 +157,7 @@ export function JobFormDialog({ onAddJob }: JobFormDialogProps) {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">
+                <label className="block text-slate-700 dark:text-zinc-200 font-semibold mb-1">
                   {contractType === 'CLT' ? 'Salário Mínimo (R$)' : 'Honorário Mín (R$)'}
                 </label>
                 <Input
@@ -156,7 +169,7 @@ export function JobFormDialog({ onAddJob }: JobFormDialogProps) {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">
+                <label className="block text-slate-700 dark:text-zinc-200 font-semibold mb-1">
                   {contractType === 'CLT' ? 'Salário Máximo (R$)' : 'Honorário Máx (R$)'}
                 </label>
                 <Input
@@ -169,7 +182,7 @@ export function JobFormDialog({ onAddJob }: JobFormDialogProps) {
             </div>
 
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">
+              <label className="block text-slate-700 dark:text-zinc-200 font-semibold mb-1">
                 Descrição da Vaga & Atividades
               </label>
               <Textarea
@@ -180,15 +193,29 @@ export function JobFormDialog({ onAddJob }: JobFormDialogProps) {
               />
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="pt-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
+                disabled={isSubmitting}
               >
                 Cancelar
               </Button>
-              <Button type="submit">Publicar Vaga</Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="font-bold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white dark:bg-[#00FF7F] dark:hover:bg-[#00FA9A] dark:text-black gap-1.5"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Publicando...</span>
+                  </>
+                ) : (
+                  <span>Publicar Vaga</span>
+                )}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
