@@ -38,7 +38,7 @@ export function JobCard({ job }: JobCardProps) {
         <p className="text-xs font-medium text-[var(--muted-foreground)]">{job.department}</p>
       </CardHeader>
 
-      <CardContent className="space-y-4 text-xs text-[var(--muted-foreground)]">
+      <CardContent className="space-y-3 sm:space-y-4 text-xs text-[var(--muted-foreground)]">
         <p className="line-clamp-2">{job.description}</p>
 
         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--border-subtle)]">
@@ -58,7 +58,7 @@ export function JobCard({ job }: JobCardProps) {
         </div>
 
         {/* Pipeline Metrics */}
-        <div className="flex items-center justify-between p-2.5 bg-[var(--secondary)] rounded-lg border border-[var(--border-subtle)] text-center">
+        <div className="flex items-center justify-between p-2 sm:p-2.5 bg-[var(--secondary)] rounded-lg border border-[var(--border-subtle)] text-center">
           <div>
             <p className="text-sm font-bold text-[var(--foreground)]">{job.total_candidates}</p>
             <p className="text-[10px] text-[var(--muted-foreground)] font-medium">Inscritos</p>

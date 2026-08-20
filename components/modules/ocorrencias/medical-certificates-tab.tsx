@@ -34,8 +34,8 @@ export function MedicalCertificatesTab({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">Atestados Médicos & Licenças</h2>
-          <p className="text-xs text-slate-500">
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Atestados Médicos & Licenças</h2>
+          <p className="text-xs text-slate-500 dark:text-[#A1A1AA]">
             Validação de saúde ocupacional, abono de faltas e conformidade legal.
           </p>
         </div>
@@ -43,7 +43,7 @@ export function MedicalCertificatesTab({
         <NewMedicalCertificateDialog onAddCertificate={handleAddCert} />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {certificates.map((cert) => {
           const startDate = new Date(cert.start_date).toLocaleDateString('pt-BR')
           const endDate = new Date(cert.end_date).toLocaleDateString('pt-BR')
@@ -52,9 +52,9 @@ export function MedicalCertificatesTab({
           return (
             <Card
               key={cert.id}
-              className="border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all"
+              className="border border-slate-200/90 dark:border-zinc-800 shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 transition-all"
             >
-              <CardHeader className="pb-3 border-b border-slate-100">
+              <CardHeader className="pb-2.5 sm:pb-3 border-b border-slate-100 dark:border-zinc-800">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Badge
@@ -72,8 +72,8 @@ export function MedicalCertificatesTab({
                         ? 'Pendente de Validação'
                         : 'Rejeitado'}
                     </Badge>
-                    <span className="text-xs text-slate-400">•</span>
-                    <span className="text-xs font-bold text-slate-800">
+                    <span className="text-xs text-slate-300 dark:text-zinc-600">•</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-zinc-100">
                       {cert.employee_name} ({cert.employee_role})
                     </span>
                     <Badge variant={cert.contract_type === 'CLT' ? 'clt' : 'pj'}>
@@ -81,49 +81,49 @@ export function MedicalCertificatesTab({
                     </Badge>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                    <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-zinc-400 font-medium">
+                    <Calendar className="h-3.5 w-3.5 text-slate-400 dark:text-zinc-500" />
                     <span>Período: {startDate} a {endDate} ({cert.days_count} {cert.days_count === 1 ? 'dia' : 'dias'})</span>
                   </div>
                 </div>
               </CardHeader>
 
-              <CardContent className="pt-4 space-y-3 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <CardContent className="pt-3 sm:pt-4 space-y-2.5 sm:space-y-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-2.5 sm:p-3 bg-slate-50 dark:bg-zinc-800/60 rounded-lg border border-slate-100 dark:border-zinc-700/50">
                   <div>
-                    <span className="text-slate-400 font-semibold uppercase text-[10px]">
+                    <span className="text-slate-400 dark:text-zinc-500 font-semibold uppercase text-[10px]">
                       CID Informado
                     </span>
-                    <p className="font-bold text-slate-800 mt-0.5">
+                    <p className="font-bold text-slate-800 dark:text-zinc-100 mt-0.5">
                       {cert.cid || 'Não informado (sigilo médico)'}
                     </p>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 font-semibold uppercase text-[10px]">
+                    <span className="text-slate-400 dark:text-zinc-500 font-semibold uppercase text-[10px]">
                       Profissional Emissor / CRM
                     </span>
-                    <p className="font-bold text-slate-800 mt-0.5">
+                    <p className="font-bold text-slate-800 dark:text-zinc-100 mt-0.5">
                       {cert.doctor_crm || 'Não especificado'}
                     </p>
                   </div>
                 </div>
 
                 {cert.days_count > 15 && (
-                  <div className="p-2.5 bg-amber-50 rounded border border-amber-200 text-amber-800 text-[11px] flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+                  <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded border border-amber-200 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 text-[11px] flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                     <span>
                       Afastamento superior a 15 dias: colaborador elegível para benefício por incapacidade temporária (INSS).
                     </span>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800">
                   <a
                     href={cert.file_url || '#'}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-blue-600 hover:underline font-semibold text-[11px]"
+                    className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-semibold text-[11px]"
                   >
                     <FileText className="h-3.5 w-3.5" />
                     Visualizar Anexo do Atestado

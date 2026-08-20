@@ -139,33 +139,33 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
       </div>
 
       {/* Metrics Banner — Cards Interativos e Clicáveis com Efeito Hover e Filtro Rápido */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {/* Card 1: Vagas Abertas */}
         <button
           type="button"
           onClick={() => handleToggleMetricFilter('abertas')}
-          className={`led-card p-5 rounded-xl flex items-center justify-between text-left transition-all duration-200 cursor-pointer group hover:scale-[1.01] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--ring)] ${
+          className={`led-card p-3.5 sm:p-5 rounded-xl flex items-center justify-between text-left transition-all duration-200 cursor-pointer group hover:scale-[1.01] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--ring)] ${
             metricFilter === 'abertas'
               ? 'ring-2 ring-[var(--primary)] bg-[var(--accent)] border-[var(--primary)]'
               : 'hover:border-[var(--primary)]'
           }`}
           title="Clique para filtrar apenas vagas com status Aberta"
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <div
-              className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+              className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                 metricFilter === 'abertas'
                   ? 'bg-[var(--primary)] text-white'
                   : 'bg-[var(--accent)] text-[var(--primary)] group-hover:bg-[var(--primary)] group-hover:text-white'
               }`}
             >
-              <Briefcase className="h-6 w-6" />
+              <Briefcase className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
+              <p className="text-[11px] sm:text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
                 Vagas Abertas
               </p>
-              <p className="text-2xl font-bold text-[var(--foreground)]">{totalOpenJobs}</p>
+              <p className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">{totalOpenJobs}</p>
             </div>
           </div>
 
@@ -186,28 +186,28 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
         <button
           type="button"
           onClick={() => handleToggleMetricFilter('candidatos')}
-          className={`led-card p-5 rounded-xl flex items-center justify-between text-left transition-all duration-200 cursor-pointer group hover:scale-[1.01] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--ring)] ${
+          className={`led-card p-3.5 sm:p-5 rounded-xl flex items-center justify-between text-left transition-all duration-200 cursor-pointer group hover:scale-[1.01] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--ring)] ${
             metricFilter === 'candidatos'
               ? 'ring-2 ring-[var(--primary)] bg-[var(--accent)] border-[var(--primary)]'
               : 'hover:border-[var(--primary)]'
           }`}
           title="Clique para filtrar vagas com candidatos no processo seletivo"
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <div
-              className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+              className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                 metricFilter === 'candidatos'
                   ? 'bg-[var(--primary)] text-white'
                   : 'bg-[var(--accent)] text-[var(--primary)] group-hover:bg-[var(--primary)] group-hover:text-white'
               }`}
             >
-              <Users className="h-6 w-6" />
+              <Users className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
+              <p className="text-[11px] sm:text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
                 Candidatos no Funil
               </p>
-              <p className="text-2xl font-bold text-[var(--foreground)]">{totalCandidates}</p>
+              <p className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">{totalCandidates}</p>
             </div>
           </div>
 
@@ -228,28 +228,28 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
         <button
           type="button"
           onClick={() => handleToggleMetricFilter('aprovados')}
-          className={`led-card p-5 rounded-xl flex items-center justify-between text-left transition-all duration-200 cursor-pointer group hover:scale-[1.01] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--ring)] ${
+          className={`led-card p-3.5 sm:p-5 rounded-xl flex items-center justify-between text-left transition-all duration-200 cursor-pointer group hover:scale-[1.01] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--ring)] ${
             metricFilter === 'aprovados'
               ? 'ring-2 ring-[var(--primary)] bg-[var(--accent)] border-[var(--primary)]'
               : 'hover:border-[var(--primary)]'
           }`}
           title="Clique para filtrar vagas com contratações realizadas"
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <div
-              className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+              className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                 metricFilter === 'aprovados'
                   ? 'bg-[var(--primary)] text-white'
                   : 'bg-[var(--accent)] text-[var(--primary)] group-hover:bg-[var(--primary)] group-hover:text-white'
               }`}
             >
-              <CheckCircle2 className="h-6 w-6" />
+              <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
+              <p className="text-[11px] sm:text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
                 Aprovados / Admitidos
               </p>
-              <p className="text-2xl font-bold text-[var(--foreground)]">{totalHired}</p>
+              <p className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">{totalHired}</p>
             </div>
           </div>
 
@@ -268,7 +268,7 @@ export function ATSDashboard({ initialJobs }: ATSDashboardProps) {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="led-card flex flex-col gap-3 p-4 rounded-xl">
+      <div className="led-card flex flex-col gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Input de Busca em tempo real com botão de limpeza */}
           <div className="relative w-full md:w-96">
