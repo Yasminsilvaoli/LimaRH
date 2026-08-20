@@ -11,6 +11,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+import { LrhAnimation } from '@/components/layout/lrh-animation'
+
 const NAVIGATION = [
   {
     name: 'Recrutamento (ATS)',
@@ -98,28 +100,8 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Organization Info & User Footer */}
-      <div className="p-4 border-t border-[var(--border-subtle)] space-y-3">
-        <div className="p-3 bg-[var(--secondary)] rounded-lg border border-[var(--border-subtle)] flex items-center gap-3">
-          <div className="h-8 w-8 rounded-md bg-[var(--background)] border border-[var(--border-subtle)] flex items-center justify-center">
-            <Building2 className="h-4 w-4 text-[var(--primary)]" />
-          </div>
-          <div className="truncate">
-            <p className="text-xs font-medium text-[var(--foreground)] truncate">Lima Tech S.A.</p>
-            <p className="text-[11px] text-[var(--muted-foreground)]">Plano Enterprise</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 pt-1">
-          <div className="h-8 w-8 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] flex items-center justify-center text-xs font-semibold shrink-0">
-            RH
-          </div>
-          <div className="text-xs min-w-0">
-            <p className="font-medium text-[var(--foreground)] truncate">Recursos Humanos</p>
-            <p className="text-[var(--muted-foreground)] truncate">admin@limarh.com</p>
-          </div>
-        </div>
-      </div>
+      {/* Animação LRH 8s (substitui os blocos de empresa e usuário) */}
+      <LrhAnimation variant="desktop" />
     </aside>
   )
 }

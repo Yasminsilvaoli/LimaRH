@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Search, Briefcase, Users, FileText, X, ArrowRight, CornerDownLeft } from 'lucide-react'
 import { NotificationDropdown } from '@/components/layout/notification-dropdown'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { LrhAnimation } from '@/components/layout/lrh-animation'
 import { Badge } from '@/components/ui/badge'
 import { INITIAL_MOCK_JOBS } from '@/lib/mock-data'
 import { INITIAL_MOCK_EMPLOYEES } from '@/lib/hris-mock'
@@ -157,11 +158,16 @@ export function Header() {
   }
 
   return (
-    <header className="h-16 border-b border-[var(--border-subtle)] bg-[var(--background)] px-4 sm:px-8
-      flex items-center justify-between shrink-0 transition-colors duration-200 z-30 relative">
+    <header className="h-16 border-b border-[var(--border-subtle)] bg-[var(--background)] px-3 sm:px-8
+      flex items-center justify-between shrink-0 transition-colors duration-200 z-30 relative gap-2 sm:gap-4">
+
+      {/* Mobile Logo LRH Animation (substitui o local da logo original no topo em mobile) */}
+      <div className="flex md:hidden items-center shrink-0">
+        <LrhAnimation variant="mobile" />
+      </div>
 
       {/* Search Input with Auto-complete Dropdown */}
-      <div ref={containerRef} className="relative w-72 sm:w-80 md:w-96">
+      <div ref={containerRef} className="relative flex-1 max-w-xs sm:max-w-sm md:max-w-md md:w-96">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)] pointer-events-none" />
         <input
           type="text"
