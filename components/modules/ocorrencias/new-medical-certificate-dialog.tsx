@@ -104,7 +104,7 @@ export function NewMedicalCertificateDialog({
       ) : (
         <Button
           onClick={() => setOpen(true)}
-          className="gap-2 shadow-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="gap-2 shadow-xs font-semibold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white dark:bg-[#00FF7F] dark:hover:bg-[#00FA9A] dark:text-black"
         >
           <Plus className="h-4 w-4" />
           <span>Lançar Atestado Médico</span>
@@ -114,7 +114,7 @@ export function NewMedicalCertificateDialog({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent onClose={() => setOpen(false)} className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center gap-2 text-[var(--primary)] dark:text-[#00FF7F]">
               <HeartPulse className="h-5 w-5" />
               <DialogTitle>Lançamento de Atestado Médico</DialogTitle>
             </div>
@@ -176,11 +176,11 @@ export function NewMedicalCertificateDialog({
               </div>
             </div>
 
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-100 dark:border-emerald-900/40 flex items-center justify-between text-xs">
-              <span className="text-emerald-800 dark:text-emerald-300 font-medium">
+            <div className="p-3 bg-[var(--accent)] dark:bg-zinc-900/80 rounded-lg border border-[var(--border-subtle)] dark:border-zinc-800 flex items-center justify-between text-xs">
+              <span className="text-[var(--foreground)] font-medium">
                 Duração total calculada:
               </span>
-              <span className="font-extrabold text-emerald-900 dark:text-emerald-200 text-sm">
+              <span className="font-extrabold text-[var(--primary)] dark:text-[#00FF7F] text-sm">
                 {calculateDays()} {calculateDays() === 1 ? 'dia' : 'dias'}
               </span>
             </div>
@@ -221,7 +221,7 @@ export function NewMedicalCertificateDialog({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5"
+                className="bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white dark:bg-[#00FF7F] dark:hover:bg-[#00FA9A] dark:text-black font-bold gap-1.5"
               >
                 {isSubmitting ? (
                   <>

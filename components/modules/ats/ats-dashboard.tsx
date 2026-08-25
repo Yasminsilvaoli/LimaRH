@@ -242,8 +242,8 @@ export function ATSDashboard({ initialJobs = [] }: ATSDashboardProps) {
             <div
               className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                 metricFilter === 'aprovados'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-emerald-500/10 text-emerald-600 dark:text-[#00FF7F] group-hover:bg-emerald-600 group-hover:text-white'
+                  ? 'bg-[var(--primary)] text-white dark:bg-[#00FF7F] dark:text-black'
+                  : 'bg-[var(--accent)] text-[var(--primary)] dark:bg-[#00FF7F]/10 dark:text-[#00FF7F] group-hover:bg-[var(--primary)] group-hover:text-white dark:group-hover:bg-[#00FF7F] dark:group-hover:text-black'
               }`}
             >
               <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -252,7 +252,7 @@ export function ATSDashboard({ initialJobs = [] }: ATSDashboardProps) {
               <p className="text-[11px] sm:text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
                 Contratações (Mês)
               </p>
-              <p className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-[#00FF7F]">{totalHired}</p>
+              <p className="text-xl sm:text-2xl font-bold text-[var(--foreground)] dark:text-[#00FF7F]">{totalHired}</p>
             </div>
           </div>
 
@@ -260,8 +260,8 @@ export function ATSDashboard({ initialJobs = [] }: ATSDashboardProps) {
             <span
               className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
                 metricFilter === 'aprovados'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-[var(--secondary)] text-[var(--muted-foreground)] group-hover:text-emerald-600'
+                  ? 'bg-[var(--primary)] text-white dark:bg-[#00FF7F] dark:text-black'
+                  : 'bg-[var(--secondary)] text-[var(--muted-foreground)] group-hover:text-[var(--primary)] dark:group-hover:text-[#00FF7F]'
               }`}
             >
               {metricFilter === 'aprovados' ? 'Filtrando' : 'Filtrar'}

@@ -13,7 +13,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { UserCheck, CheckCircle2, Building2, Calendar, FileCheck } from 'lucide-react'
+import { UserCheck, CheckCircle2, Loader2 } from 'lucide-react'
+import { createEmployee } from '@/lib/services/employees'
 
 interface AdmitCandidateDialogProps {
   candidate: KanbanCandidateItem
@@ -47,62 +48,107 @@ export function AdmitCandidateDialog({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
-  const handleAdmit = (e: React.FormEvent) => {
+  const handleAdmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      await createEmployee({
+        organization_id: '00000000-0000-0000-0000-000000000001',
+        profile_id: null,
+        full_name: candidate.full_name,
+        email: candidate.email,
+        phone: candidate.phone || null,
+        birth_date: '1995-01-01',
+        contract_type: contractType,
+        job_title: jobTitle,
+        department: 'Engenharia de Software',
+        admission_date: admissionDate,
+        resignation_date: null,
+        status: 'ativo',
+        salary_or_rate: Number(salaryOrRate) || 0,
+        clt_details:
+          contractType === 'CLT'
+            ? {
+                cpf: cpf || '000.000.000-00',
+                rg: rg || null,
+                pis_pasep: null,
+                ctps_number: '1234567',
+                ctps_series: '0010',
+                transport_voucher: false,
+                meal_voucher_value: 800,
+                health_insurance: true,
+              }
+            : null,
+        pj_details:
+          contractType === 'PJ'
+            ? {
+                company_name: companyName || candidate.full_name + ' Serviços LTDA',
+                trade_name: null,
+                cnpj: cnpj || '00.000.000/0001-00',
+                invoice_due_day: Number(invoiceDueDay) || 10,
+                contract_valid_until: '2026-12-31',
+                contract_file_url: null,
+                bank_name: 'Banco Digital',
+                bank_agency: '0001',
+                bank_account: '12345-6',
+                pix_key: candidate.email,
+              }
+            : null,
+      })
+
       setIsSuccess(true)
       setTimeout(() => {
         setIsSuccess(false)
         onSuccess(candidate)
         onOpenChange(false)
       }, 1500)
-    }, 800)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent onClose={() => onOpenChange(false)} className="max-w-xl">
         <DialogHeader>
-          <div className="flex items-center gap-2 text-emerald-600">
+          <div className="flex items-center gap-2 text-[var(--primary)] dark:text-[#00FF7F]">
             <UserCheck className="h-5 w-5" />
             <DialogTitle>Aprovar & Admitir no HRIS</DialogTitle>
           </div>
           <DialogDescription>
-            Converter o candidato <strong>{candidate.full_name}</strong> em colaborador oficial da organização.
+            Converter o candidato <strong>{candidate.full_name}</strong> em colaborador oficial da organização no banco de dados.
           </DialogDescription>
         </DialogHeader>
 
         {isSuccess ? (
           <div className="py-8 text-center space-y-3">
-            <div className="h-12 w-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto animate-bounce">
+            <div className="h-12 w-12 rounded-full bg-[var(--accent)] text-[var(--primary)] dark:bg-[#00FF7F]/20 dark:text-[#00FF7F] flex items-center justify-center mx-auto animate-bounce">
               <CheckCircle2 className="h-7 w-7" />
             </div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-bold text-[var(--foreground)]">
               Colaborador Admitido com Sucesso!
             </h3>
-            <p className="text-xs text-slate-500">
-              O perfil e contrato foram criados automaticamente no módulo HRIS.
+            <p className="text-xs text-[var(--muted-foreground)]">
+              O perfil e contrato foram cadastrados automaticamente no módulo HRIS.
             </p>
           </div>
         ) : (
           <form onSubmit={handleAdmit} className="space-y-4 text-xs">
             {/* Candidate Summary Banner */}
-            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
+            <div className="p-3 bg-slate-50 dark:bg-zinc-900 rounded-lg border border-slate-200 dark:border-zinc-800 flex items-center justify-between">
               <div>
-                <p className="font-semibold text-slate-900">{candidate.full_name}</p>
-                <p className="text-slate-500">{candidate.email} • {candidate.phone || 'Sem telefone'}</p>
+                <p className="font-semibold text-[var(--foreground)]">{candidate.full_name}</p>
+                <p className="text-[var(--muted-foreground)]">{candidate.email} • {candidate.phone || 'Sem telefone'}</p>
               </div>
-              <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+              <span className="px-2 py-0.5 rounded bg-[var(--accent)] text-[var(--primary)] dark:bg-[#00FF7F]/20 dark:text-[#00FF7F] text-[11px] font-bold">
                 Aprovado no ATS
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">
+                <label className="block text-slate-700 dark:text-zinc-200 font-semibold mb-1">
                   Regime de Contratação *
                 </label>
                 <Select
@@ -110,39 +156,14 @@ export function AdmitCandidateDialog({
                   onChange={(e) => setContractType(e.target.value as 'CLT' | 'PJ')}
                   options={[
                     { label: 'CLT (Carteira Assinada)', value: 'CLT' },
-                    { label: 'PJ (Prestador / Honorários)', value: 'PJ' },
+                    { label: 'PJ (Pessoa Jurídica)', value: 'PJ' },
                   ]}
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Cargo / Função Oficial *
-                </label>
-                <Input
-                  required
-                  value={jobTitle}
-                  onChange={(e) => setJobTitle(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  {contractType === 'CLT' ? 'Salário Base (R$) *' : 'Honorário Mensal (R$) *'}
-                </label>
-                <Input
-                  required
-                  type="number"
-                  value={salaryOrRate}
-                  onChange={(e) => setSalaryOrRate(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Data de Início / Admissão *
+                <label className="block text-slate-700 dark:text-zinc-200 font-semibold mb-1">
+                  Data Prevista de Início *
                 </label>
                 <Input
                   required
@@ -153,25 +174,46 @@ export function AdmitCandidateDialog({
               </div>
             </div>
 
-            {/* Condicionais por regime */}
-            {contractType === 'CLT' ? (
-              <div className="p-3 bg-sky-50/50 rounded-lg border border-sky-200 space-y-3">
-                <p className="font-semibold text-sky-900 flex items-center gap-1.5">
-                  <FileCheck className="h-4 w-4" />
-                  Dados Iniciais CLT
-                </p>
-                <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-700 dark:text-zinc-200 font-semibold mb-1">
+                  Cargo Efetivo *
+                </label>
+                <Input
+                  required
+                  value={jobTitle}
+                  onChange={(e) => setJobTitle(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-zinc-200 font-semibold mb-1">
+                  {contractType === 'CLT' ? 'Salário Base (R$) *' : 'Honorário Mensal (R$) *'}
+                </label>
+                <Input
+                  required
+                  type="number"
+                  value={salaryOrRate}
+                  onChange={(e) => setSalaryOrRate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* CLT Specifics */}
+            {contractType === 'CLT' && (
+              <div className="p-3 bg-slate-50 dark:bg-zinc-900/60 rounded-lg border border-slate-200 dark:border-zinc-800 space-y-2">
+                <p className="font-semibold text-slate-800 dark:text-zinc-200">Documentação CLT</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-700 font-medium mb-1">CPF *</label>
+                    <label className="block text-slate-600 dark:text-zinc-400 mb-0.5">CPF *</label>
                     <Input
-                      required
                       placeholder="000.000.000-00"
                       value={cpf}
                       onChange={(e) => setCpf(e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-700 font-medium mb-1">RG</label>
+                    <label className="block text-slate-600 dark:text-zinc-400 mb-0.5">RG</label>
                     <Input
                       placeholder="00.000.000-0"
                       value={rg}
@@ -180,48 +222,34 @@ export function AdmitCandidateDialog({
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="p-3 bg-indigo-50/50 rounded-lg border border-indigo-200 space-y-3">
-                <p className="font-semibold text-indigo-900 flex items-center gap-1.5">
-                  <Building2 className="h-4 w-4" />
-                  Dados da Pessoa Jurídica (PJ)
-                </p>
-                <div className="grid grid-cols-2 gap-3">
+            )}
+
+            {/* PJ Specifics */}
+            {contractType === 'PJ' && (
+              <div className="p-3 bg-slate-50 dark:bg-zinc-900/60 rounded-lg border border-slate-200 dark:border-zinc-800 space-y-2">
+                <p className="font-semibold text-slate-800 dark:text-zinc-200">Dados da PJ do Prestador</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-700 font-medium mb-1">Razão Social *</label>
+                    <label className="block text-slate-600 dark:text-zinc-400 mb-0.5">Razão Social</label>
                     <Input
-                      required
-                      placeholder="Ex: Mendes Tech Serviços LTDA"
+                      placeholder="Empresa LTDA"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-700 font-medium mb-1">CNPJ *</label>
+                    <label className="block text-slate-600 dark:text-zinc-400 mb-0.5">CNPJ</label>
                     <Input
-                      required
                       placeholder="00.000.000/0001-00"
                       value={cnpj}
                       onChange={(e) => setCnpj(e.target.value)}
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-slate-700 font-medium mb-1">
-                    Dia de Vencimento da Nota Fiscal
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={31}
-                    value={invoiceDueDay}
-                    onChange={(e) => setInvoiceDueDay(e.target.value)}
-                  />
-                </div>
               </div>
             )}
 
-            <DialogFooter>
+            <DialogFooter className="pt-2">
               <Button
                 type="button"
                 variant="outline"
@@ -232,10 +260,17 @@ export function AdmitCandidateDialog({
               </Button>
               <Button
                 type="submit"
-                className="bg-emerald-600 hover:bg-emerald-700 font-semibold"
+                className="bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white dark:bg-[#00FF7F] dark:hover:bg-[#00FA9A] dark:text-black font-semibold gap-1.5"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Admitindo...' : 'Confirmar Admissão'}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Admitindo...</span>
+                  </>
+                ) : (
+                  <span>Confirmar Admissão</span>
+                )}
               </Button>
             </DialogFooter>
           </form>

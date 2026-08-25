@@ -125,7 +125,7 @@ export function CandidateCard({
             <Button
               size="sm"
               onClick={() => setShowAdmitModal(true)}
-              className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0 gap-1 shadow-xs"
+              className="h-7 text-[11px] bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white dark:bg-[#00FF7F] dark:hover:bg-[#00FA9A] dark:text-black font-bold px-2 py-0 gap-1 shadow-xs"
             >
               <UserCheck className="h-3.5 w-3.5" />
               Admitir
@@ -133,7 +133,7 @@ export function CandidateCard({
           ) : (
             <button
               onClick={() => onMoveStage(candidate.candidate_id, 'aprovado')}
-              className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:underline"
+              className="text-[11px] font-semibold text-[var(--primary)] dark:text-[#00FF7F] hover:underline cursor-pointer"
             >
               Aprovar
             </button>

@@ -53,7 +53,7 @@ export default async function JobDetailsPage({ params }: JobDetailsPageProps) {
                 {typedJob.location}
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-[#00FF7F] font-semibold">
+              <span className="flex items-center gap-1 text-[var(--primary)] dark:text-[#00FF7F] font-semibold">
                 <DollarSign className="h-3 w-3" />
                 {typedJob.min_salary && typedJob.max_salary
                   ? `${formatCurrency(typedJob.min_salary)} - ${formatCurrency(typedJob.max_salary)}`
